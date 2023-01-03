@@ -1,62 +1,51 @@
-## ---------------------------------------------------------------------------------------------------------------- ##
+## -------------------------------------------------------------------------- ##
+## Codes for the paper: Spatial genetic differentiation correlates with species 
+## assemblage turnover across tropical reef fish lineages - Vilcot et al. 2023
 ## Script name: 02_Genetic_diversity
-## Codes for the paper: Species-genetic diversity correlations in tropical reef fishes
-## Date: 28 July 2020
+## Date: 02/01/2023
 ## Author: Maurine Vilcot
 ## Email: maurine.vilcot@ens-lyon.fr
-## Aim: Measure alpha, beta, and gamma genetic diversity for each of the 99 randomizations
-##      and then compute the mean and standard deviation (sd) across the 99 randomizations.
-##        - global alpha genetic diversity: average of the mean Hs obtained between the four sites
-##            (i.e. the mean genetic alpha diversity of the Western Indian Ocean by species)
-##        - global gamma genetic diversity: global expected heterozygosity (Hs)
-##        - global beta genetic diversity: global G”ST, a corrected version of Hedrick’s G’ST
-##        - pairwise beta genetic diversity: pairwise G”ST
-## ---------------------------------------------------------------------------------------------------------------- ##
+## -------------------------------------------------------------------------- ##
 
-#### -------- Setup ---------------------------------------------------------------------------------------------
+#### -------- Setup ------------------------------------------------------------
 source("00_Setup.R")
 
-list_sp <- list.files("Data/SNPs_ReeFISH/")
+## List of species 
+list_sp <- list.files("Data/SNPs_reefish/")
+
+## List of sampling sites
 list_pop <- c("MF",	"MV",	"MY",	"SC")
 
 
-#### -------- Compute genetic diversity on the 999 resampling ---------------------------------------------------------------------------------------------
+#### -------- Compute genetic diversity for the 999 resampled SNPs -------------
 
+## Loop on species
 for (sp in 1:length(list_sp)){
   species <- list_sp[sp]
-  cat("##### Data loading for species:", species, ", species ", sp, "/", length(list_sp), "#####","\n")
+  
+  ## Read resampled SNPs data
+  cat("Data loading for species:", species, ", species ", sp, "/", length(list_sp), "\n")
   SNP_resampled <- readRDS(paste0("Intermediate/01_SNP_resampled/Data_999resampling_4479SNP_10ind_", species, ".rds"))
   
-  cat("##### Basic stats computation and giaggotti framework application for species:", species, "#####","\n")
-  GenetDiv999 <- mclapply(1:999, mc.cores=20, function(i){
-    
+  ## Basic stats for the 999 resamplings
+  cat("Basic stats computation for species:", species, "\n")
+  GenetDiv999 <- mclapply(1:999, mc.cores=20, function(i){ # Parallel computation on 20 cores
     cat("Basic stats computation:",i,"\n")
-    BS <- basic.stats(SNP_resampled[[i]][[3]],diploid=TRUE,digits=4)
-    Bs_o <- BS$overall
-    
-    Gst <- (Bs_o["Ht"]-Bs_o["Hs"])/Bs_o["Ht"];k=4 # ATTENTION ICI on devrait avoir k=3 pour certaines espèces...
-    Gst_Max <- (k-1)*(1-Bs_o["Hs"])/ (k-1+Bs_o["Hs"])
-    
-    GstP <- Gst/Gst_Max
-    GstPP <- k*(Bs_o["Ht"]-Bs_o["Hs"])/ ((k*Bs_o["Ht"]-Bs_o["Hs"])*(1-Bs_o["Hs"]))
-    
-    cat("Jost multiplicatif framework application:",i,"\n")
-    Hst <- (Bs_o["Ht"]-Bs_o["Hs"])/(1-Bs_o["Hs"])
-    Jost <- c(Jt=1/(1-Bs_o["Ht"]),Js=1/(1-Bs_o["Hs"]),Jst=1/(1-Hst))
-    
-    list(c(BS$overall,Jost,Gst=Gst,GstP=GstP,GstPP=GstPP),BS[-7])
-    
+    BS <- basic.stats(SNP_resampled[[i]][[3]], diploid=TRUE, digits=4) # [[3]] for Hierfstat
+    list(c(BS$overall),BS[-7])
   })
-  cat("##### Results compeltion for :", species, "#####","\n")
   saveRDS(GenetDiv999, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_999_",species,".rds"))
   
+  ## Mean and sd over the 999 resamplings
   GenetDivMean <- apply(do.call(rbind,lapply(GenetDiv999, function(e){e[[1]]})),2,mean,na.rm=T)
   GenetDivSd <- apply(do.call(rbind,lapply(GenetDiv999, function(e){e[[1]]})),2,sd,na.rm=T)
   saveRDS(GenetDivMean, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_mean_", species, ".rds"))
   saveRDS(GenetDivSd, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_sd_", species, ".rds"))
   
-  GenetDivHedrick999 <- mclapply(1:2, mc.cores=1, function(i){
-    Mygenind <- gl2gi(SNP_resampled[[i]][[1]])
+  ## Hedrick Gst for the 999 resamplings
+  cat("Hedrick G''st computation for species:", species, "\n")
+  GenetDivHedrick999 <- mclapply(1:999, mc.cores=20, function(i){ # Parallel computation on 20 cores
+    Mygenind <- gl2gi(SNP_resampled[[i]][[1]]) # [[2]] for Genlight
     Gst_Hedrick(Mygenind)
   })
   saveRDS(GenetDivHedrick999, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_GstPPHedrick_999_", species, ".rds"))
@@ -65,80 +54,83 @@ for (sp in 1:length(list_sp)){
 
 
 
-#### -------- Alpha computation by site ---------------------------------------------------------------------------------------------
+#### -------- Population Alpha diversity (= by sampling site) ------------------
+
 Alpha_list <- list()
+
 for (sp in 1:length(list_sp)){
   species <- list_sp[sp]
   
-  ## PREVIOUS METHOD
-  cat("##### Alpha population values:", species, ", species ", sp, "/", length(list_sp), "#####","\n")
+  ## Read Basic stats computations over 999 resamplings
+  cat("Alpha population values:", species, ", species ", sp, "/", length(list_sp),"\n")
   GenetDiv999 <- readRDS(paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_999_", species, ".rds"))
-  Hs_999 <- do.call(rbind,lapply(1:999,function(x){cat(x,"\n");apply(GenetDiv999[[x]][[2]]$Hs,2,mean,na.rm=T)}))
+  
+  ## mean an sd of Hs for population
+  Hs_999 <- do.call(rbind, lapply(1:999, function(x) {
+      cat(x, "\n")
+      apply(GenetDiv999[[x]][[2]]$Hs, 2, mean, na.rm = T)
+    }))
   Alpha_list[[species]]$Hs_mean <- apply(Hs_999, 2, mean)
   Alpha_list[[species]]$Hs_sd <- apply(Hs_999, 2, sd)
-
-  Js_999 <- 1/(1-Hs_999)
-  Alpha_list[[species]]$Js_mean <- apply(Js_999, 2, mean)
-  Alpha_list[[species]]$Js_sd <- apply(Js_999, 2, sd)
-  
-  # ## New method
-  # Alpha_list[[species]]$Hs <- Hs(SNP_resampled[[1]][[2]])
-  
-} # end of i
+}
 
 saveRDS(Alpha_list, file="Intermediate/GD_alpha_population.RDS")
-# saveRDS(Alpha_list, file="Intermediate/Population_Alpha_adegenet.RDS")
-# Alpha_list <- readRDS(file="Intermediate/GD_alpha_population.RDS")
 
 
 
-#### -------- Beta calculation pairwise ---------------------------------------------------------------------------------------------
+
+#### -------- Pairwise Beta diversity ------------------------------------------
+
 Beta_list <- list()
-# Beta_list <- readRDS("Intermediate/DistMat_GstPP.RDS")
+
 for (sp in 1:length(list_sp)){
   species <- list_sp[sp]
-  cat("##### Beta pairwise values:", species,", species ", sp, "/",length(list_sp),"#####","\n")
+  
+  ## Read resampled SNPs data
+  cat("Beta pairwise values:", species,", species ", sp, "/",length(list_sp),"\n")
   SNP_resampled <- readRDS(paste0("Intermediate/01_SNP_resampled/Data_999resampling_4479SNP_10ind_", species, ".rds"))
   
-  # GstPP 99 computations
-  GstPP_99 <- mclapply(1:99, mc.cores=20, function(i){
-    Mygenind <- gl2gi(SNP_resampled[[i]][[1]])
-    distGstPP <- as.matrix(pairwise_Gst_Hedrick(Mygenind))
-    colnames(distGstPP) <- rownames(distGstPP) <- levels(SNP_resampled[[i]][[3]][,"pop"])
-    distFst
+  ## Pairwise Gst'' 999 computations
+  GstPP_999 <- mclapply(1:999, mc.cores=20, function(i){
+    Mygenind <- gl2gi(SNP_resampled[[i]][[1]]) # [[1]] for genlight
+    distGstPP <- as.matrix(pairwise_Gst_Hedrick(Mygenind)) # transform dist object to matrix
+    colnames(distGstPP) <- rownames(distGstPP) <- levels(SNP_resampled[[i]][[3]][,"pop"]) # Name rows and columns as pops
+    distGstPP
   })
-  saveRDS(GstPP_99, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_DistMatGstPP99_", species, ".rds"))
+  saveRDS(GstPP_999, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_DistMatGstPP999_", species, ".rds"))
   
-  # GstPP mean & sd
-  npop <- nrow(GstPP_99[[1]])
-  GstPP_mean <- apply(array(unlist(GstPP_99), c(npop, npop, length(GstPP_99))), c(1,2), mean)
-  GstPP_sd <- apply(array(unlist(GstPP_99), c(npop, npop, length(GstPP_99))), c(1,2), sd)
-  colnames(GstPP_mean) <- colnames(GstPP_sd) <- colnames(GstPP_99[[1]])
-  rownames(GstPP_mean) <- rownames(GstPP_sd) <- rownames(GstPP_99[[1]])
+  ## Pairwise Gst'' mean & sd
+  npop <- nrow(GstPP_999[[1]])
+  GstPP_mean <- apply(array(unlist(GstPP_999), c(npop, npop, length(GstPP_999))), c(1,2), mean)
+  GstPP_sd <- apply(array(unlist(GstPP_999), c(npop, npop, length(GstPP_999))), c(1,2), sd)
+  colnames(GstPP_mean) <- colnames(GstPP_sd) <- colnames(GstPP_999[[1]])
+  rownames(GstPP_mean) <- rownames(GstPP_sd) <- rownames(GstPP_999[[1]])
   GstPP_mean <- GstPP_mean[order(rownames(GstPP_mean)), order(colnames(GstPP_mean))]
   GstPP_sd <- GstPP_sd[order(rownames(GstPP_sd)), order(colnames(GstPP_sd))]
   Beta_list[[species]]$GstPP_mean <- as.dist(GstPP_mean)
   Beta_list[[species]]$GstPP_sd <- as.dist(GstPP_sd)
   
-  # Fst 99 computations
-  Fst_99 <- mclapply(1:99, mc.cores=20, function(i){
+  
+  ## Pairwise Fst 99 computations
+  Fst_999 <- mclapply(1:99, mc.cores=20, function(i){
     distFst <- as.matrix(genet.dist(SNP_resampled[[i]][[3]], diploid=TRUE, method="Nei87"))
     colnames(distFst) <- rownames(distFst) <- levels(SNP_resampled[[i]][[3]][,"pop"])
     distFst
   })
-  saveRDS(Fst_99, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_DistMatFst99_", species, ".rds"))
+  saveRDS(Fst_999, paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_DistMatFst999_", species, ".rds"))
   
-  # Fst mean & sd
-  Fst_mean <- apply(array(unlist(Fst_99), c(npop, npop, length(Fst_99))), c(1,2), mean)
-  Fst_sd <- apply(array(unlist(Fst_99), c(npop, npop, length(Fst_99))), c(1,2), sd)
-  colnames(Fst_mean) <- colnames(Fst_sd) <- colnames(Fst_99[[1]])
-  rownames(Fst_mean) <- rownames(Fst_sd) <- rownames(Fst_99[[1]])
+  ## Pairwise Fst mean & sd
+  Fst_mean <- apply(array(unlist(Fst_999), c(npop, npop, length(Fst_999))), c(1,2), mean)
+  Fst_sd <- apply(array(unlist(Fst_999), c(npop, npop, length(Fst_999))), c(1,2), sd)
+  colnames(Fst_mean) <- colnames(Fst_sd) <- colnames(Fst_999[[1]])
+  rownames(Fst_mean) <- rownames(Fst_sd) <- rownames(Fst_999[[1]])
   Fst_mean <- Fst_mean[order(rownames(Fst_mean)), order(colnames(Fst_mean))]
   Fst_sd <- Fst_sd[order(rownames(Fst_sd)), order(colnames(Fst_sd))]
   Beta_list[[species]]$Fst_mean <- as.dist(Fst_mean)
   Beta_list[[species]]$Fst_sd <- as.dist(Fst_sd)
   
-  rm(GstPP_99, Fst_99, GstPP_mean, GstPP_sd, Fst_mean, Fst_sd, SNP_resampled)
+  rm(GstPP_99, Fst_999, GstPP_mean, GstPP_sd, Fst_mean, Fst_sd, SNP_resampled)
+  
   gc()
 }
 
@@ -147,32 +139,32 @@ saveRDS(Beta_list, "Intermediate/GD_beta_DistMat.RDS")
 
 
 
-#### -------- Genetic diversity dataset compilation --------------------------------------------------------
+#### -------- Merge all genetic diversity indices into one table ---------------
 
-## Multi-site/regional
+### ----- Multi-site values ----- ###
+## Read basic stats values
 F2load <- list.files("Intermediate/03_Genetic_diversity/", pattern = "Genetic_diversity_mean", full.names = T)
-Genet_global <- data.frame(do.call(rbind,lapply(F2load, function(i){readRDS(i)})))
-rownames(Genet_global) <- gsub(F2load, pattern = "Intermediate/03_Genetic_diversity/Genetic_diversity_mean_|.rds", replacement = "")
-Genet_global$Gen_s <- rownames(Genet_global)
+Genet_multi <- data.frame(do.call(rbind,lapply(F2load, function(i){readRDS(i)})))
 
+## Rename columns from species name
+rownames(Genet_multi) <- gsub(F2load, pattern = "Intermediate/03_Genetic_diversity/Genetic_diversity_mean_|.rds", replacement = "")
+Genet_multi$Gen_s <- rownames(Genet_multi)
+
+## Add traits indices
 Traits <- read.csv("Data/Dataset_species_traits.csv")
-Genet_global <- merge(Traits, Genet_global, by = "Gen_s", all = T)
+Genet_multi <- merge(Traits, Genet_multi, by = "Gen_s", all = T)
+rownames(Genet_multi) <- Genet_multi$Gen_s
 
-rownames(Genet_global) <- Genet_global$Gen_s
-colnames(Genet_global) <- gsub(colnames(Genet_global), pattern = ".Ht|.Hs", replacement = "")
-Genet_global["Car_m",c("Dst","Dstp","Fst","Fstp","Dest","Gst","GstP", "GstPP")] <- 0
-Genet_global["Car_m","Hs"] <- Genet_global["Car_m","Ht"]
-Genet_global["Car_m","Jst"] <- 1
-
+## Add Hedrick Gst values
 for (species in list_sp){
   print(species)
   GenetDivHedrick999 <- readRDS(paste0("Intermediate/03_Genetic_diversity/Genetic_diversity_GstPPHedrick_999_",species,".rds"))
-  Genet_global[species, "GstPPHedrick"] <- apply(do.call(rbind,lapply(GenetDivHedrick999, function(e){e$global})),2,mean,na.rm=T)
+  Genet_multi[species, "GstPPHedrick"] <- apply(do.call(rbind,lapply(GenetDivHedrick999, function(e){e$global})),2,mean,na.rm=T)
 }
 
 
 
-# Population alpha
+### ----- Population Alpha values ----- ###
 Alpha_list <- readRDS(file="Intermediate/GD_alpha_population.RDS")
 for (metric in c("Hs", "Js")){
   Genet_population <- data.frame(matrix(ncol = 4, nrow = 0))
@@ -186,11 +178,11 @@ for (metric in c("Hs", "Js")){
   colnames(Genet_population) <- paste0(metric, "_", colnames(Genet_population))
   Genet_population$Gen_s <- rownames(Genet_population)
   
-  Genet_global <- merge(Genet_global, Genet_population, by = "Gen_s")
+  Genet_multi <- merge(Genet_multi, Genet_population, by = "Gen_s")
 }
 
 
-## Pairwise beta
+### ----- Pairwise Beta values ----- ###
 Beta_list <- readRDS("Intermediate/GD_beta_DistMat.RDS")
 for (metric in c("Fst", "GstPP")){
   Genet_pairwise <- data.frame(t(combn(list_pop, 2)))
@@ -209,11 +201,10 @@ for (metric in c("Fst", "GstPP")){
   colnames(Genet_pairwise) <- paste0(metric, "_", colnames(Genet_pairwise))
   Genet_pairwise$Gen_s <- rownames(Genet_pairwise)
   
-  ## Merge into one data frame
-  Genet_global <- merge(Genet_global, Genet_pairwise, by = "Gen_s")
+  Diversity_genet <- merge(Genet_multi, Genet_pairwise, by = "Gen_s")
 }
 
-## Write whole dataset
-write.csv(Genet_global, "Intermediate/Table_Genetic_Diversity_full.csv", row.names=F)
+## Write whole genetic data set
+write.csv(Diversity_genet, "Intermediate/Table_Genetic_Diversity_full.csv", row.names=F)
 
 

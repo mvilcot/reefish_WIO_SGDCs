@@ -1,45 +1,76 @@
+## -------------------------------------------------------------------------- ##
+## Codes for the paper: Spatial genetic differentiation correlates with species 
+## assemblage turnover across tropical reef fish lineages - Vilcot et al. 2023
+## Script name: 00_Setup
+## Date: 02/01/2023
+## Author: Maurine Vilcot
+## Email: maurine.vilcot@ens-lyon.fr
+## -------------------------------------------------------------------------- ##
 
-#### -------- Load libraries ---------------------------------------------------------------------------------------------
+#### -------- Create arborescence ----------------------------------------------
 
-library(ade4) #mantel.rtest, #dudi.pca
-library(vegan) #procrustes
-library(factoextra) #fviz_eig
-library(nlme) #gls
-library(lme4) #lmer modele mixte
-library(r2glmm) #r2beta
-library(lmerTest) # pour avoir les p.values
-library(marmap) #lc.dist
+dir.create("Figures")
+dir.create("Figures/DAPC")
+dir.create("Intermediate")
+dir.create("Intermediate/01_SNP_resampled")
+dir.create("Intermediate/02_DAPC")
+dir.create("Intermediate/03_Genetic_diversity")
+dir.create("Intermediate/04_PAmatrix_by_site")
+dir.create("Intermediate/04_ShapeFiles_buffered")
+dir.create("Results")
 
-library(ape) #read.tree
-library(betapart) #beta.multi beta.pair phylo.beta.multi
-library(dartR) # To keep some individuls (gl.keep.ind) and drop some loci (gl.drop.loc) from a genlight
-library(hierfstat)
+
+
+#### -------- Load libraries ---------------------------------------------------
+
+## Genetic diversity
 library(adegenet)
-library(mmod) #Gst_Hedrick & pairwise_Gst_Hedrick
-library(ecodist) #MRM
+library(hierfstat)
+library(dartR)
+library(mmod)
 
-library(sf) #st_as_sf & st_read
-library(rgdal) #spTransform
-library(rgeos) #gbuffer
+## Species diversity
+library(ape)
+library(betapart)
+
+
+## R code
+library(parallel) # mclapply
+library(reshape2) #melt
+
+## GIS
 library(geojsonio) #geojson_json
 library(raster) #crop #extent
+library(rgeos) #gbuffer
 library(rmapshaper) #ms_simplify
-library(picante) #pd
-library(geiger) #name.check
+library(sf) #st_as_sf & st_read
+library(marmap) #lc.dist
+library(rgdal) #spTransform
 
+## Statistics
+library(vegan) #procrustes #mantel
+library(ecodist) #MRM
+library(nlme) #gls
+library(r2glmm) #r2beta
+
+## Plot
 library(ggplot2)
-library(patchwork)
-library(ggVennDiagram)
+library(lme4) #lmer modele mixte
+library(cowplot)
 library(ggrepel)
 library(gridExtra)
-library(RColorBrewer)
-library(parallel)
-library(reshape2) #melt
-library(latex2exp)
-# library(tidyr)
+library(patchwork)
 
 
-#### -------- Customed function ---------------------------------------------------------------------------------------------
+# library(RColorBrewer)
+# library(latex2exp)
+# library(lmerTest) # pour avoir les p.values
+# library(picante) #pd
+# library(geiger) #name.check
+
+
+
+#### -------- Plot function ----------------------------------------------------
 
 theme_Publication <- function(base_size=14, base_family="sans") {
   library(grid)
@@ -62,7 +93,6 @@ theme_Publication <- function(base_size=14, base_family="sans") {
             panel.grid.minor = element_blank(),
             legend.key = element_rect(colour = NA),
             legend.position = "right",
-            # legend.direction = "horizontal",
             legend.key.size= unit(0.5, "cm"),
             legend.title = element_text(face="italic"),
             plot.margin=unit(c(10,5,5,5),"mm"),

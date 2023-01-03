@@ -1,51 +1,51 @@
-## ---------------------------------------------------------------------------------------------------------------- ##
+## -------------------------------------------------------------------------- ##
+## Codes for the paper: Spatial genetic differentiation correlates with species 
+## assemblage turnover across tropical reef fish lineages - Vilcot et al. 2023
 ## Script name: 02_DAPC
-## Codes for the paper: Species-genetic diversity correlations in tropical reef fishes
-## Date: 28 July 2020
+## Date: 02/01/2023
 ## Author: Maurine Vilcot
 ## Email: maurine.vilcot@ens-lyon.fr
-## Aim: To investigate the genetic structure at individual level, we applied 
-##      a Discriminant Analysis of Principal Components (DAPC), a multivariate statistical approach
-##      for which variance in the sample is partitioned into a betweengroup and a within-group components, 
-##      in an effort to maximize discrimination between groups. DAPC was applied for each species 
-##      to one of the randomized dataset using the dapc function implemented in the R package “adegenet”.
-##      In sight of multi-species comparison, four clusters were defined as the four sampling sites 
-##      and the same number of PCA axis were retained in the discriminant analysis. As Caranx melampygus
-##      is only represented by 15 individuals, we choose to retain five PCA axis to avoid overfitting.
-## ---------------------------------------------------------------------------------------------------------------- ##
+## -------------------------------------------------------------------------- ##
 
-#### -------- Setup ----------------------------------------------------------------------------------------------
+#### -------- Setup ------------------------------------------------------------
 source("00_Setup.R")
 
+## list the 20 species studied
 Database <- read.csv("Data/Dataset_species_traits.csv")
-list_sp <- as.character(Database$Gen_s) # list of the 20 studied species
-myCol <- c("#f8766d","#76ee00","#00bfc4","#febe01") #Best
+list_sp <- as.character(Database$Gen_s) 
 
-
-#### -------- Loop by species ----------------------------------------------------------------------------------------
-n_pca=5
+## Setup colors
+myCol <- c("#f8766d","#76ee00","#00bfc4","#febe01")
 par(oma=c(0,0,0,0))
-# DAPC_var <- setNames(data.frame(matrix(ncol = 3, nrow = 0)), c("PC1", "PC2", "PC3"))
+
+
+
+#### -------- DAPC by species --------------------------------------------------
+## Set the number of PCA axis to retain
+n_pca=5 
+
+## Loop on each species
 for (sp in 1:length(list_sp)){
   species <- list_sp[sp]
   print(paste0("Species n°", sp, "/20: ", species)) 
 
-  Genlight <- readRDS(paste0("Data/SNPs_ReeFISH/", species, "/radiator_genlight_", species, ".RDS"))  #Choose the first sampling
-  Genlight$pop <- as.factor(as.character(Genlight$pop)) #so as population levels are in alphabetic order
-  # Genlight <- Genlight[,sample(nLoc(Genlight), 4479, replace=F)]
-  
-  #### -------- DAPC -------------------------------------------------------------------------------------------------
+  ## Read SNPs data
+  Genlight <- readRDS(paste0("Data/SNPs_reefish/", species, "/radiator_genlight_", species, ".RDS"))
+  levels(Genlight$pop) <- c("MV","SC","MF","MY") # relevel populations
+
+  ## DAPC computation
   set.seed(999) # Setting a seed for a consistent result
   dapc <- dapc(Genlight, pop = Genlight$pop, n.da = 6, n.pca = n_pca)
   
-  saveRDS(dapc, paste0("Intermediate/02_DAPC//DAPC_result_", n_pca, "PC_", species, ".RDS"))
+  ## Save DAPC result
+  saveRDS(dapc, paste0("Intermediate/02_DAPC/DAPC_result_", n_pca, "PC_", species, ".RDS"))
+  dapc <- readRDS(paste0("Intermediate/02_DAPC/DAPC_result_", n_pca, "PC_", species, ".RDS"))
   print.dapc(dapc) # decomment if needed
   summary.dapc(dapc)
   predict.dapc(dapc)
 
-  #### -------- Plots ------------------------------------------------------------------------------------------------
-  pdf(file = paste0("Results/Figures/DAPC/DAPC_plot_", n_pca, "PC_", species, ".pdf"), width = 6, height = 8)
-
+  ## Plot
+  pdf(file = paste0("Figures/DAPC/DAPC_plot_", n_pca, "PC_", species, ".pdf"), width = 6, height = 8)
   layout(matrix(c(1,2), nrow = 2, ncol = 1), heights=c(2.4,0.8))
   par(oma=c(1,1,2,1))
   scatter(dapc, scree.pca = F, legend = T, clabel = F, 
@@ -53,11 +53,8 @@ for (sp in 1:length(list_sp)){
   par(mar=c(1,4,1,0))
   compoplot(dapc, lab=NULL, col=myCol, border = NA, legend = F, show.lab=F, cex.lab = 0.8)
   mtext(Database$Genus_species[sp], outer=TRUE, cex=1.5, line=0.5)
-  
   dev.off()
-  
-  # DAPC_var[species,] <- c(dapc$eig/sum(dapc$eig))
+
 }
-# write.csv(DAPC_var, "Results/01_DAPC_percentage_axis_variance.csv", row.names = T)
 
 
