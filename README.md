@@ -31,20 +31,16 @@ Computation of genetic diversity
 
 
 # 04 Species diversity
-Computation of species diversity 
-- β-SD: Species dissimilarity between sites 
-	βjac-SD using Jaccard’s dissimilarity index 
-	βjtu-SD  using turnover component of Jaccard’s dissimilarity index 
-- α-SD: Local species richness, i.e. at each site 
-- γ-SD: Regional species richness, i.e. from the four sites 
+Computation of species diversity  
+- β-SD: Species dissimilarity between sites, with Jaccard’s dissimilarity index  
+- α-SD: Local species richness, i.e. at each site  
+- γ-SD: Regional species richness, i.e. from the four sites  
 
 
 # 05 Statistical analysis
 a. Application of α, β, and γ lineage-based SGDCs: linear models  
 b. β-SGDCs for each of the 20 species separatedly: Mantel correlation test and Procruste analysis  
-c. Influence of dispersal on β-SGDCs: linear models, and PGLS  
-	PLD ~ β-SGDCs  
-	U-crit ~ β-SGDCs  
+c. Relation between dispersal (PLD or U-crit) and β-SGDCs: linear models and PGLS  
 c. MRM relating β-GD or β-SD to (i) geographic distance between sites and a (ii) binary distance metric reflecting whether the studied sites are separated or not from the Maldives by the Monsoon Drift  
 
 
