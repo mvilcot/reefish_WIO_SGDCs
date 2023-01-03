@@ -9,14 +9,16 @@ The paper explores species-genetic diversity correlations (SGDCs) across 20 reef
 Maldives (MV), Mayotte (MY), Mafia Island (MF) and Seychelles (SC).
 
 ### Genetic SNPs data set
-20 species, from 4479 to ... SNPs (Donati et al., 2021)
+Filtered SNPs data for 20 species, from 4479 to 38931 SNPs. From Donati et al. (2021).
 
 ### Species presence data set
-from (Albouy et al., 2019)
+Global species presence data. From Albouy et al. (2019).
 
 
 # 01 SNP Resampling
-"As genomic diversity is directly related to the number of SNPs (Moragues et al., 2010), we randomly down-sampled 999 times the SNPs to the lowest common number of SNPs found across all species (i.e., n = 4479 SNPs in Pseudanthias squamipinnis; Table S2). To best account for differences in site sampling success across species, the number of individuals used for genetic diversity measurements was also randomly sampled 999 times to a maximum number of 10 individuals per sampling site (median value of the overall sampling). "
+999 down-sampling of each of the 20 species SNPs data to:  
+- 10 individuals per sampling site
+- 4479 SNPs (i.e. the lowest common number of SNPs found across all species)
 
 
 # 02 DAPC
@@ -38,9 +40,9 @@ Computation of species diversity
 
 
 # 05 Statistical analysis
-a. Application of α, β, and γ lineage-based SGDCs: linear models  
-b. β-SGDCs for each of the 20 species separatedly: Mantel correlation test and Procruste analysis  
-c. Relation between dispersal (PLD or U-crit) and β-SGDCs: linear models and PGLS  
-c. MRM relating β-GD or β-SD to (i) geographic distance between sites and a (ii) binary distance metric reflecting whether the studied sites are separated or not from the Maldives by the Monsoon Drift  
+- α, β, and γ lineage-based SGDCs: linear models  
+- β-SGDCs for each of the 20 species separatedly: Mantel correlation test and Procruste analysis  
+- Relation between β-SGDCs and dispersal (PLD or U-crit): linear models and PGLS  
+- MRM relating β-GD or β-SD to (i) geographic distance between sites and a (ii) binary distance metric reflecting whether the studied sites are separated or not from the Maldives by the Monsoon Drift  
 
 
