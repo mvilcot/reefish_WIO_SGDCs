@@ -1,5 +1,5 @@
 # Reef fish SGDCs
-Codes for the paper: Spatial genetic differentiation correlates with species assemblage turnover across tropical reef fish lineages 
+Codes for the paper: Spatial genetic differentiation correlates with species assemblage turnover across tropical reef fish lineages  
 Maurine Vilcot, maurine.vilcot@ens-lyon.fr
 
 
@@ -39,11 +39,11 @@ Computation of species diversity
 
 
 # 05 Statistical analysis
-a. Application of α, β, and γ lineage-based SGDCs: linear models 
-b. β-SGDCs for each of the 20 species separatedly: Mantel correlation test and Procruste analysis 
-c. Influence of dispersal on β-SGDCs: linear models, and PGLS 
-	PLD ~ β-SGDCs 
-	U-crit ~ β-SGDCs 
-c. MRM relating β-GD or β-SD to (i) geographic distance between sites and a (ii) binary distance metric reflecting whether the studied sites are separated or not from the Maldives by the Monsoon Drift 
+a. Application of α, β, and γ lineage-based SGDCs: linear models  
+b. β-SGDCs for each of the 20 species separatedly: Mantel correlation test and Procruste analysis  
+c. Influence of dispersal on β-SGDCs: linear models, and PGLS  
+	PLD ~ β-SGDCs  
+	U-crit ~ β-SGDCs  
+c. MRM relating β-GD or β-SD to (i) geographic distance between sites and a (ii) binary distance metric reflecting whether the studied sites are separated or not from the Maldives by the Monsoon Drift  
 
 
