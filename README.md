@@ -1,5 +1,6 @@
-# Reef fish SGDCs
-Codes for the paper: Spatial genetic differentiation correlates with species assemblage turnover across tropical reef fish lineages  
+# REEFISH SGDCs
+Codes for the paper:  
+__Spatial genetic differentiation correlates with species assemblage turnover across tropical reef fish lineages__  
 Maurine Vilcot, maurine.vilcot@ens-lyon.fr
 
 
